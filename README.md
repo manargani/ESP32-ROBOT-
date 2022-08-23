@@ -1,167 +1,121 @@
 # ESP32-ROBOT-
-#include <SoftwareSerial.h>
+#include "BluetoothSerial.h"
 
-#define DEBUG_ENABLE // Comment this line before putting the code in the robot to remove serial printing
+BluetoothSerial SerialBT;
 
-#ifdef DEBUG_ENABLE
-  #define DEBUG_MACRO(STRING) Serial.println(STRING)
-#else
-  #define DEBUG_MACRO(STRING) // Nothing
-#endif
+char receivedChar;
 
-/* Pin assignments */
-#define ENABLE_1_PIN          6
-#define MOTOR_1_INPUT_1       7
-#define MOTOR_1_INPUT_2       8
-#define MOTOR_2_INPUT_1       9
-#define MOTOR_2_INPUT_2       10
-#define ENABLE_2_PIN          11
-#define SERIAL_RX_PIN         2
-#define SERIAL_TX_PIN         3
+const int ena =2 ;
+const int in1 =15 ;
+const int in2 = 4;
+const int in3 = 0;
+const int in4 =12 ;
+const int enb =14 ;
 
-/* Constants */
-#define MAX_MOTOR_SPEED       255
-#define NORMAL_MOTOR_SPEED    180
-#define SLOW_MOTOR_SPEED      80
 
-// Software serial instance 
-SoftwareSerial bluetoothSerial(SERIAL_RX_PIN, SERIAL_TX_PIN); // RX_PIN, TX_PIN
-char incomingData = 'r';
-
-/* Functions prototypes */
-void forward(uint8_t speed);
-void reverse(uint8_t speed);
-void right(uint8_t speed);
-void left(uint8_t speed);
-void sharpRightTurn(uint8_t speed);
-void sharpLeftTurn(uint8_t speed);
-void stopBot(uint8_t speed);
-void scanBluetooth();
-
-/* ---------------------------------------------------------- */
 void setup() {
-  #ifdef DEBUG_ENABLE
-    Serial.begin(9600);
-  #endif
-  
-  bluetoothSerial.begin(9600); // This is the serial port we'll communicate with the bluetooth module through
-  DEBUG_MACRO("--- Bluetooth RC robot started ---");
-  
-  pinMode(MOTOR_1_INPUT_1, OUTPUT);
-  pinMode(MOTOR_1_INPUT_2, OUTPUT);
-  pinMode(MOTOR_2_INPUT_1, OUTPUT);
-  pinMode(MOTOR_2_INPUT_2, OUTPUT);
-  pinMode(ENABLE_1_PIN, OUTPUT);
-  pinMode(ENABLE_2_PIN, OUTPUT);
+  Serial.begin(9600);
+  SerialBT.begin("esm el bluetooth elli t7eb tsammih"); 
+;
+  pinMode(ena, OUTPUT);
+  pinMode(enb, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  digitalWrite(ena,LOW);
+  digitalWrite(enb,LOW);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,LOW);
+  digitalWrite(in3,LOW);
+  digitalWrite(in4,LOW);
+ 
 }
+
+void AVANT(){
+     
+  digitalWrite(ena,HIGH);
+  digitalWrite(enb,HIGH);
+  digitalWrite(in1,HIGH);
+  digitalWrite(in2,LOW);
+  digitalWrite(in3,HIGH);
+  digitalWrite(in4,LOW);
+} 
+     
+void ARRIERE(){
+      
+  digitalWrite(ena,HIGH);
+  digitalWrite(enb,HIGH);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,HIGH);
+  digitalWrite(in3,LOW);
+  digitalWrite(in4,HIGH);
+}
+void GAUCHE(){
+  digitalWrite(ena,HIGH);
+  digitalWrite(enb,HIGH);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,HIGH);
+  digitalWrite(in3,HIGH);
+  digitalWrite(in4,LOW);
+}
+void DROITE(){
+      
+  digitalWrite(ena,HIGH);
+  digitalWrite(enb,HIGH);
+  digitalWrite(in1,HIGH);
+  digitalWrite(in2,LOW);
+  digitalWrite(in3,LOW);
+  digitalWrite(in4,HIGH);
+}
+void STOP(){
+     
+       digitalWrite(ena,LOW);
+  digitalWrite(enb,LOW);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,LOW);
+  digitalWrite(in3,LOW);
+  digitalWrite(in4,LOW);
+}
+
 
 void loop() {
-  scanBluetooth(); // Check if there's any incoming data through bluetooth
+    receivedChar =(char)SerialBT.read();
+    if(receivedChar == '1')
+    {
+      AVANT();
+       Serial.print ("forward");
+      Serial.print ("\n");
+       
+    }
+    else if(receivedChar == '3')
+    {
+ 
+      ARRIERE();
+       Serial.print ("backward");
+      Serial.print ("\n");
+    }        
+     else if (receivedChar == '4')
+    {
+
+      GAUCHE();
+       Serial.print ("left");
+      Serial.print ("\n");
+    }        
+    else if (receivedChar == '2')
+    {
+
+      DROITE();
+       Serial.print ("right");
+      Serial.print ("\n");
+    }
+ 
+    
+    else     {
+      STOP();
+       Serial.print ("stop");
+      Serial.print ("\n");
+    }
   
-  switch(incomingData){ // Choose appropriate action
-    case 'S': 
-      stopBot(NORMAL_MOTOR_SPEED);
-      DEBUG_MACRO("STOPPING");
-      break;
-    
-    case 'F': 
-      forward(NORMAL_MOTOR_SPEED); 
-      DEBUG_MACRO("FORWARD");
-      break;
-      
-    case 'L': 
-      sharpLeftTurn(NORMAL_MOTOR_SPEED); 
-      DEBUG_MACRO("LEFT");
-      break;
-    
-    case 'R': 
-      sharpRightTurn(NORMAL_MOTOR_SPEED);
-      DEBUG_MACRO("RIGHT");
-      break;
-      
-    case 'B':
-      reverse(NORMAL_MOTOR_SPEED);
-      DEBUG_MACRO("REVERSE");
-      break;
-      
-    default: 
-      DEBUG_MACRO("UNKNOWN COMMAND");
-      break;
-  }
-}
-/* ---------------------------------------------------------- */
-
-void forward(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, LOW);
-  digitalWrite(MOTOR_1_INPUT_2, HIGH);
-  digitalWrite(MOTOR_2_INPUT_1, LOW);
-  digitalWrite(MOTOR_2_INPUT_2, HIGH);
-}
-
-void reverse(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, HIGH);
-  digitalWrite(MOTOR_1_INPUT_2, LOW);
-  digitalWrite(MOTOR_2_INPUT_1, HIGH);
-  digitalWrite(MOTOR_2_INPUT_2, LOW);
-}
-
-void right(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, LOW);
-  digitalWrite(MOTOR_1_INPUT_2, HIGH);
-  digitalWrite(MOTOR_2_INPUT_1, LOW);
-  digitalWrite(MOTOR_2_INPUT_2, LOW);
-}
-
-void left(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, LOW);
-  digitalWrite(MOTOR_1_INPUT_2, LOW);
-  digitalWrite(MOTOR_2_INPUT_1, LOW);
-  digitalWrite(MOTOR_2_INPUT_2, HIGH);
-}
-
-void sharpRightTurn(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, LOW);
-  digitalWrite(MOTOR_1_INPUT_2, HIGH);
-  digitalWrite(MOTOR_2_INPUT_1, HIGH);
-  digitalWrite(MOTOR_2_INPUT_2, LOW);
-}
-
-void sharpLeftTurn(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, HIGH);
-  digitalWrite(MOTOR_1_INPUT_2, LOW);
-  digitalWrite(MOTOR_2_INPUT_1, LOW);
-  digitalWrite(MOTOR_2_INPUT_2, HIGH);
-}
-
-void stopBot(uint8_t speed){
-  /* The pin numbers and high, low values might be different depending on your connections */
-  analogWrite(ENABLE_1_PIN, speed); //Left Motor Speed
-  analogWrite(ENABLE_2_PIN, speed); //Right Motor Speed
-  digitalWrite(MOTOR_1_INPUT_1, LOW);
-  digitalWrite(MOTOR_1_INPUT_2, LOW);
-  digitalWrite(MOTOR_2_INPUT_1, LOW);
-  digitalWrite(MOTOR_2_INPUT_2, LOW);
-}
-
-void scanBluetooth(){
-  // There's data in the serial buffer (available() returns the number of bytes available)
-  if(bluetoothSerial.available() > 0) incomingData = bluetoothSerial.read(); // Read a byte
+  delay(20);
 }
